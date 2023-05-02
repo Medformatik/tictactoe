@@ -29,7 +29,8 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Tic Tac Toe',
+      debugShowCheckedModeBanner: false,
+      title: 'Tic-Tac-Toe',
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
@@ -155,7 +156,7 @@ class _HomeState extends State<Home> {
     return Scaffold(
       backgroundColor: currentPlayer == PlayerType.x ? Colors.red : Colors.blue,
       appBar: AppBar(
-        title: const Text("Tic Tac Toe"),
+        title: const Text("Tic-Tac-Toe"),
       ),
       body: Center(
         child: Container(
