@@ -268,7 +268,7 @@ class Cell extends StatelessWidget {
           onPressed();
         },
         style: ElevatedButton.styleFrom(
-          primary: icon == PlayerType.none
+          backgroundColor: icon == PlayerType.none
               ? Colors.grey[300]
               : icon == PlayerType.x
                   ? Colors.red
