@@ -1,25 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:logger/logger.dart';
-
-late Logger _logger;
-Logger get logger => _logger;
 
 void main() {
-  // Configure the logger
-  _logger = Logger(
-    filter: null, // Use the default LogFilter (-> only log in debug mode)
-    printer: PrettyPrinter(
-      methodCount: 2, // number of method calls to be displayed
-      errorMethodCount: 8, // number of method calls if stacktrace is provided
-      lineLength: 120, // width of the output
-      colors: true, // Colorful log messages
-      printEmojis: true, // Print an emoji for each log message
-      printTime: false, // Should each log print contain a timestamp
-    ), // Use the PrettyPrinter to format and print log
-    output: null, // Use the default LogOutput (-> send everything to console)
-  );
-
-  // Start app
   runApp(const App());
 }
 
@@ -69,29 +50,22 @@ class _HomeState extends State<Home> {
   }
 
   bool checkWin() {
-    if (field[0] == field[1] && field[0] == field[2] && field[0] != PlayerType.none) {
-      return true;
-    } else if (field[3] == field[4] && field[3] == field[5] && field[3] != PlayerType.none) {
-      return true;
-    } else if (field[6] == field[7] && field[6] == field[8] && field[6] != PlayerType.none) {
-      return true;
-    } else if (field[0] == field[3] && field[0] == field[6] && field[0] != PlayerType.none) {
-      return true;
-    } else if (field[1] == field[4] && field[1] == field[7] && field[1] != PlayerType.none) {
-      return true;
-    } else if (field[2] == field[5] && field[2] == field[8] && field[2] != PlayerType.none) {
-      return true;
-    } else if (field[0] == field[4] && field[0] == field[8] && field[0] != PlayerType.none) {
-      return true;
-    } else if (field[2] == field[4] && field[2] == field[6] && field[2] != PlayerType.none) {
-      return true;
+    List<List<int>> winningPositions = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8], // horizontal
+      [0, 3, 6], [1, 4, 7], [2, 5, 8], // vertical
+      [0, 4, 8], [2, 4, 6] // diagonal
+    ];
+
+    for (var positions in winningPositions) {
+      if (field[positions[0]] == field[positions[1]] && field[positions[0]] == field[positions[2]] && field[positions[0]] != PlayerType.none) {
+        return true;
+      }
     }
+
     return false;
   }
 
-  bool gameFinished() {
-    return field.every((playerType) => playerType != PlayerType.none);
-  }
+  bool gameFinished() => field.every((playerType) => playerType != PlayerType.none);
 
   @override
   void initState() {
@@ -110,45 +84,11 @@ class _HomeState extends State<Home> {
             setState(() {});
           } else {
             setState(() {});
-            showDialog(
-                barrierDismissible: false,
-                context: context,
-                builder: (context) {
-                  return AlertDialog(
-                    title: const Text("Game over!"),
-                    content: const Text("No player won this game"),
-                    actions: [
-                      ElevatedButton(
-                          onPressed: () {
-                            reset();
-                            Navigator.of(context).pop();
-                            setState(() {});
-                          },
-                          child: const Text("Restart")),
-                    ],
-                  );
-                });
+            showNoWinnerDialog(context);
           }
         } else {
           setState(() {});
-          showDialog(
-              barrierDismissible: false,
-              context: context,
-              builder: (context) {
-                return AlertDialog(
-                  title: const Text("Game over!"),
-                  content: Text("Player ${currentPlayer.toString().split(".")[1]} won the game"),
-                  actions: [
-                    ElevatedButton(
-                        onPressed: () {
-                          reset();
-                          Navigator.of(context).pop();
-                          setState(() {});
-                        },
-                        child: const Text("Restart")),
-                  ],
-                );
-              });
+          showWinnerDialog(context);
         }
       }
     }
@@ -171,80 +111,68 @@ class _HomeState extends State<Home> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Cell(
-                      icon: field[0],
-                      onPressed: () {
-                        makeMove(0);
-                      },
-                    ),
-                    Cell(
-                      icon: field[1],
-                      onPressed: () {
-                        makeMove(1);
-                      },
-                    ),
-                    Cell(
-                      icon: field[2],
-                      onPressed: () {
-                        makeMove(2);
-                      },
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Cell(
-                      icon: field[3],
-                      onPressed: () {
-                        makeMove(3);
-                      },
-                    ),
-                    Cell(
-                      icon: field[4],
-                      onPressed: () {
-                        makeMove(4);
-                      },
-                    ),
-                    Cell(
-                      icon: field[5],
-                      onPressed: () {
-                        makeMove(5);
-                      },
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Cell(
-                      icon: field[6],
-                      onPressed: () {
-                        makeMove(6);
-                      },
-                    ),
-                    Cell(
-                      icon: field[7],
-                      onPressed: () {
-                        makeMove(7);
-                      },
-                    ),
-                    Cell(
-                      icon: field[8],
-                      onPressed: () {
-                        makeMove(8);
-                      },
-                    ),
-                  ],
-                )
+                for (int i = 0; i < 9; i += 3)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (int j = i; j < i + 3; j++)
+                        Cell(
+                          icon: field[j],
+                          onPressed: () {
+                            makeMove(j);
+                          },
+                        ),
+                    ],
+                  ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Future<dynamic> showWinnerDialog(BuildContext context) {
+    return showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Game over!"),
+          content: Text("Player ${currentPlayer.toString().split(".")[1]} won the game"),
+          actions: [
+            ElevatedButton(
+                onPressed: () {
+                  reset();
+                  Navigator.of(context).pop();
+                  setState(() {});
+                },
+                child: const Text("Restart")),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<dynamic> showNoWinnerDialog(BuildContext context) {
+    return showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Game over!"),
+          content: const Text("No player won this game"),
+          actions: [
+            ElevatedButton(
+                onPressed: () {
+                  reset();
+                  Navigator.of(context).pop();
+                  setState(() {});
+                },
+                child: const Text("Restart")),
+          ],
+        );
+      },
     );
   }
 }
